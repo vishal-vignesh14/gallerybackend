@@ -31,11 +31,17 @@ const storage = new CloudinaryStorage({
 const upload = multer({ storage });
 
 // Upload endpoint
-app.post('/upload', upload.single('image'), async (req, res) => {
-  const image = new Image({ url: req.file.path });
-  await image.save();
-  res.json(image);
+app.post('/upload', upload.array('images', 10), async (req, res) => {
+  try {
+    const uploads = await Promise.all(
+      req.files.map(file => new Image({ url: file.path }).save())
+    );
+    res.json(uploads);
+  } catch (err) {
+    res.status(500).json({ error: 'Upload failed', details: err.message });
+  }
 });
+
 
 // Fetch all images
 app.get('/images', async (req, res) => {
